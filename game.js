@@ -61,7 +61,7 @@ class Actor {
     if (!(otherActor instanceof Actor)) {
       throw new Error(`В метод isIntersect не передан движущийся объект типа Actor`);
     }
-    if (this === otherActor) { // если равен самому себе
+    if (this === otherActor) {
       return false;
     }   
     
@@ -77,13 +77,7 @@ class Level {
     this.actors = actors.slice();
     this.grid = grid.slice();
     this.height = this.grid.length;
-    this.width = this.grid.reduce((rez, item) => {
-      if (rez > item.length) {
-        return rez;
-      } else {
-        return item.length;
-      }
-    }, 0);
+    this.width = Math.max(0, ...grid.map(item => item.length));
     this.status = null;
     this.finishDelay = 1;
     this.player = this.actors.find(actor => actor.type === 'player');
@@ -177,19 +171,20 @@ class LevelParser {
     return plan.map(line => line.split('')).map(line => line.map(line => this.obstacleFromSymbol(line)));  
   }
 
-  createActors(plan) {
-    return plan.reduce((rez, itemY, y) => {
-      itemY.split('').forEach((itemX, x) => {
-        const constructor = this.actorFromSymbol(itemX);
-        if (typeof constructor === 'function') {
-          const actor = new constructor(new Vector(x, y));
+  createActors(plan = []) {
+    let actors = [];
+    plan.forEach((strOfPlan, firstIndex) => {
+      strOfPlan.split('').forEach((symbol, index) => {
+        let constructorOfActor = this.actorFromSymbol(symbol);
+        if (typeof constructorOfActor === 'function') {
+          let actor = new constructorOfActor(new Vector(index, firstIndex));
           if (actor instanceof Actor) {
-            rez.push(actor);
+            actors.push(actor);
           }
         }
       });
-      return rez;
-    },[]);
+    });
+    return actors;
   }
 
   parse(plan) {
